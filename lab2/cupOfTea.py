@@ -8,7 +8,7 @@ import numpy
 
 firstTemperature = 84
 enviromentTemperature = 21
-rate = .09
+RATE = .09
 time = 15
 step = 15
 timeOfExperiment = 30
@@ -16,7 +16,7 @@ listOfTemperature = [85.2, 78.6, 75.4, 73, 71.5, 69.8, 67.9, 66.8, 64.9, 63.6, 6
 
 
 
-#comming soon
+#FIXME
 def cordinateFromWindox():
 
 
@@ -94,47 +94,43 @@ def cordinateFromWindox():
     return getPar()
 
 
+def experiment1(firstTemperature, enviromentTemperature, i):
+    return enviromentTemperature + (firstTemperature-enviromentTemperature) * numpy.exp(-(RATE*i))
+
+def experiment2(firstTemperature,enviromentTemperature,rate):
+    return firstTemperature-RATE * rate *(firstTemperature-enviromentTemperature)
+
+
+def main_function(firstTemperature,enviromentTemperature,rate):
+    Temperature0 = firstTemperature
+    yList1 = []
+    yList2 = []
+    xList = []
+    epsList = []
+    i = 1
+
+    while Temperature0 > enviromentTemperature+1:
+        firstFunctionRes = experiment1(firstTemperature,enviromentTemperature, i * rate)
+
+        xList.append(i*rate)
+
+        y = experiment2(Temperature0,enviromentTemperature, rate)
+
+        Temperature0 = y
+
+        yList1.append(firstFunctionRes)
+        yList2.append(Temperature0)
+
+        eps = pow(firstFunctionRes-Temperature0,2)
+        epsList.append(numpy.sqrt(eps))
+        i += 1
+
+    return yList1, yList2, xList, epsList
 
 
 
-def experiment1(firstTemperature,enviromentTemperature,rate,time):
-    timeList = []
-    currentTemperatureList = []
-    for i in range(time):
-        currentTemperature = ((-rate) * (firstTemperature-enviromentTemperature))
-        timeList.append(i)
-        currentTemperatureList.append(firstTemperature)
-        firstTemperature += currentTemperature
-
-    return timeList,currentTemperatureList
 
 
-def experiment2(firstTemperature,enviromentTemperature,rate,time,step):
-    xlist = []
-    ylist = []
-    step/=60
-    N = int(numpy.ceil(time/step))
-    for i in range(N):
-        d = firstTemperature - rate * step * (firstTemperature-enviromentTemperature)
-        xlist.append(i*step)
-        ylist.append(d)
-        firstTemperature = d
-    return xlist, ylist
-
-
-def experiment3(firstTemperature,enviromentTemperature,rate,time,step):
-    xlist = []
-    ylist = []
-    step /= 60
-    N = int(numpy.ceil(time / step))
-    for i in range(N):
-        d = enviromentTemperature + (firstTemperature-enviromentTemperature) * numpy.exp(-(rate*time*i))
-        temp = firstTemperature - rate * step * (firstTemperature-enviromentTemperature)
-        firstTemperature = temp
-        xlist.append(step * i)
-        ylist.append(temp - d)
-
-    return xlist, ylist
 
 
 def experiment4(enviromentTemperature, listOfTemperature):
@@ -172,13 +168,12 @@ def experiment4(enviromentTemperature, listOfTemperature):
 
 if __name__ == '__main__':
 
-    xList1, yList1 = experiment1(firstTemperature,enviromentTemperature,rate,time)
+    ylist1,ylist2,xlist, epslist1 = main_function(firstTemperature,enviromentTemperature,0.1)
+    _, _, xlist2, epslist2 = main_function(firstTemperature,enviromentTemperature,0.17)
+    _, _, xlist3, epslist3 = main_function(firstTemperature,enviromentTemperature,0.27)
 
-    xList2, yList2 = experiment2(firstTemperature,enviromentTemperature,rate,time, step)
+    firstgraphX, firstgraphY, secondgraphX, secondgraphY = experiment4(enviromentTemperature,listOfTemperature)
 
-    xList3, yList3 = experiment3(firstTemperature,enviromentTemperature,rate,time, step)
-
-    firstgraphX,firstgraphY,secondgraphX,secondgraphY = experiment4(enviromentTemperature, listOfTemperature)
 
     egrid = (10, 10)
     ax = plt.subplot2grid(egrid, (0, 0), colspan=4, rowspan=4)
@@ -186,28 +181,32 @@ if __name__ == '__main__':
     ax3 = plt.subplot2grid(egrid, (0, 5), colspan=7, rowspan=10)
 
     ax.grid()
-    ax.set_title('')
-    ax.set_xlabel('Час')
-    ax.set_ylabel('Температура')
-    ax.plot(xList1, yList1, label="Аналітичний графік")
-    ax.plot(xList2, yList2, label="Явний метод Ейлера")
+    ax.set_title('Temperature dependence on time')
+    ax.set_xlabel('Time')
+    ax.set_ylabel('Temperature')
+    ax.plot(xlist, ylist1, label="Analytical graph")
+    ax.plot(xlist, ylist2, label="Euler's explicit method")
     ax.legend()
 
 
     ax2.grid()
-    ax2.set_title('Похибка')
-    ax2.set_xlabel('Час')
-    ax2.set_ylabel('Температура')
-    ax2.plot(xList3,yList3)
+    ax2.set_title('Fault')
+    ax2.set_xlabel('Time')
+    ax2.set_ylabel('Temperature')
+    ax2.plot(xlist,epslist1, label='0.1')
+    ax2.plot(xlist2,epslist2, label='0.17')
+    ax2.plot(xlist3,epslist3, label='0.27')
+    ax2.legend()
 
 
 
     ax3.grid()
-    ax3.set_title('')
-    ax3.set_xlabel('Час')
-    ax3.set_ylabel('Температура')
-    ax3.plot(firstgraphX, firstgraphY, color='red', label="Теоретичний графік")
-    ax3.plot(secondgraphX, secondgraphY, color='green', label="Експериментальний грфік")
+    ax3.set_title('Divergence')
+    ax3.set_xlabel('Time')
+    ax3.set_ylabel('Temperature')
+    ax3.plot(firstgraphX,firstgraphY, color='green', label='Analytical data')
+    ax3.plot(secondgraphX,secondgraphY, color='red', label='Real data')
+
     ax3.legend()
 
 
@@ -217,6 +216,8 @@ if __name__ == '__main__':
     mng = plt.get_current_fig_manager()
     mng.window.state('zoomed')
     plt.show()
+    
+
 
 
 
